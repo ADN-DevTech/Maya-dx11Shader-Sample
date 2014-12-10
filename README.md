@@ -4,8 +4,9 @@ Maya dx11Shader Sample
 This sample is the Maya source code for the "C:\Program Files\Autodesk\Maya2015\bin\plug-ins\dx11Shader.mll" plug-in.
 
 Information about dx11Shader in Maya:
-http://knowledge.autodesk.com/support/maya/learn-explore/caas/CloudHelp/cloudhelp/2015/ENU/Maya/files/GUID-21D2A020-EC76-4679-B38A-D5270CE52566-htm.html
-http://knowledge.autodesk.com/support/maya/learn-explore/caas/CloudHelp/cloudhelp/2015/ENU/Maya/files/GUID-EE108A86-9830-455E-BF2F-64A4075E8303-htm.html
+
+  - http://knowledge.autodesk.com/support/maya/learn-explore/caas/CloudHelp/cloudhelp/2015/ENU/Maya/files/GUID-21D2A020-EC76-4679-B38A-D5270CE52566-htm.html
+  - http://knowledge.autodesk.com/support/maya/learn-explore/caas/CloudHelp/cloudhelp/2015/ENU/Maya/files/GUID-EE108A86-9830-455E-BF2F-64A4075E8303-htm.html
 
 
 
