@@ -1,0 +1,179 @@
+//
+//  Description:
+//      Create UI components for dx11Shader plugin
+//
+
+// Close the preference window if it is open before adding the new panel for dx11Shader:
+proc closePreferencesWindow()
+{
+	global string $gPreferenceWindow;
+	if (`window -exists $gPreferenceWindow`) {
+		string $result;
+		string $confirmMessage = getPluginResource( "dx11Shader", "kPrefSavePrefsOrNotMsg" );
+		string $save = `uiRes "s_TdialogStrings.rSave"`;
+		string $dontSave = `uiRes "s_TdialogStrings.rDontSave"`;
+
+		$result = `confirmDialog -title (getPluginResource( "dx11Shader", "kPrefSaveMsg" ))
+			-message $confirmMessage
+			-button $save 
+			-button $dontSave
+			-defaultButton $save
+			-cancelButton $dontSave`;
+
+		if ($result == $save) {
+			savePrefsChanges;
+		}
+		else {
+			cancelPrefsChanges;
+		}
+	}
+}
+
+global proc prefsFrameLayoutCreateDx11Shader()
+{
+	frameLayout -labelVisible false -borderVisible false -marginWidth 10 -marginHeight 10;
+	    columnLayout -adj true prefDx11ShaderCol;
+}
+
+global proc prefsSetOptVarToDefaultDx11Shader()
+{
+	optionVar -sv "dx11ShaderDefaultEffect" "AutodeskUberShader.fxo";
+}
+
+global proc dx11ShaderRefreshValueCtrls()
+{
+	global string $gPreferenceWindow;
+	if (!`window -exists $gPreferenceWindow`) {
+		return;
+	}
+
+	setParent $gPreferenceWindow;
+	string $parent = "prefDx11ShaderCol";
+	
+	if (`columnLayout -q -numberOfChildren $parent` == 0) {
+		return;
+	}
+
+	textField -e -fileName `optionVar -q dx11ShaderDefaultEffect` dx11ShaderDefaultEffectField;
+}
+
+global proc prefsHoldCurrentStateDx11Shader(string $mode)
+{
+	// Avoid missing value updates by assuming fields are all changed. 
+	prefDx11ShaderDefaultEffectValueUpdate;
+
+	if ($mode == "save") {
+		optionVar -sv "dx11ShaderDefaultEffectHold" `optionVar -q dx11ShaderDefaultEffect`;
+	} else if ($mode == "restore") {
+		optionVar -sv "dx11ShaderDefaultEffect" `optionVar -q dx11ShaderDefaultEffectHold`;
+	} else {	// "remove"
+		// Remove the temporary option vars so they don't get saved out
+		optionVar -remove "dx11ShaderDefaultEffectHold";
+	}
+	
+	dx11ShaderRefreshValueCtrls;
+}
+
+global proc prefDx11ShaderDefaultEffectBrowser()
+{
+	// Start in current file's directory if possible. 
+	string $sStartingdir = `textField -q -fileName dx11ShaderDefaultEffectField`;
+	$sStartingdir = `match ".*/" $sStartingdir`; 
+
+	string $fileDialogCmd = "fileDialog2";
+		$fileDialogCmd += (" -cap \"" + (getPluginResource( "dx11Shader", "kPrefFileOpen")) + "\"");
+		$fileDialogCmd += (" -fm 1");
+		if( $sStartingdir != "")
+			$fileDialogCmd += (" -dir \"" + $sStartingdir + "\"");
+
+	// Invoke the file browser dialog.
+	string $file[] = `eval $fileDialogCmd`;
+	if (size($file) > 0 && $file[0] != "")
+	{
+		string $path = $file[0];
+
+		// ... strip the QT's .* postfix
+		//     OS native dialog does not have the .* postfix if the filter is * or *.*
+		if ( endsWith($path, ".*") )
+		{
+			$path = substring($path, 1, size($path)-2);
+		}
+
+		textField -e -fileName $path dx11ShaderDefaultEffectField;
+		prefDx11ShaderDefaultEffectValueUpdate();
+	}
+}
+
+global proc prefDx11ShaderDefaultEffectValueUpdate()
+{
+	if (`textField -exists dx11ShaderDefaultEffectField`) {
+		string $newVal = `textField -q -fileName dx11ShaderDefaultEffectField`;
+		optionVar -sv "dx11ShaderDefaultEffect" $newVal;
+	}
+}
+
+global proc prefsCreateDx11Shader()
+{
+	global string $gPreferenceWindow;
+	setParent $gPreferenceWindow;
+	string $parent = "prefDx11ShaderCol";
+	
+	// Check to see if this has been created already.
+	//
+	if (`columnLayout -q -numberOfChildren $parent` > 0) {
+		return;
+	}
+
+	//  Create the UI
+	//
+	setParent $parent;
+	setUITemplate -pushTemplate prefsTemplate;
+
+	// This is used to force the width to fill the window
+	separator -style "none" -h 1;
+	string $editFrameLayoutName = getPluginResource( "dx11Shader", "kPrefDefaultEffectFile");
+
+	frameLayout -label $editFrameLayoutName;
+	    columnLayout -adjustableColumn true ;
+	    
+		rowLayout -nc 2
+				-cw2 300 25
+				-cal 1 "both"
+				-cal 2 "left"
+				-ct2 "both" "left"
+				-adj 1;
+
+			textField -fileName (`optionVar -q "dx11ShaderDefaultEffect"`)  
+				-cc "prefDx11ShaderDefaultEffectValueUpdate();"
+				dx11ShaderDefaultEffectField;
+			symbolButton -image "navButtonBrowse.png" -c "prefDx11ShaderDefaultEffectBrowser()" browseBtn;
+	
+	setParent $parent;
+
+	setUITemplate -popTemplate;
+
+	dx11ShaderRefreshValueCtrls;
+}
+
+global proc dx11ShaderCreateUI()
+{
+	// We have renamed MayaUberShader.fx to AutodeskUberShader.fx, so we 
+	// make sure preference settings of previous Maya versions do not continue to point to the old shader:
+	if (!`optionVar -exists dx11ShaderDefaultEffect` || `optionVar -q dx11ShaderDefaultEffect` == "MayaUberShader.fxo")
+		prefsSetOptVarToDefaultDx11Shader;
+
+	closePreferencesWindow();
+	addCustomPrefsTab("prefsCreateDx11Shader",
+		"prefsFrameLayoutCreateDx11Shader",
+		"dx11ShaderRefreshValueCtrls",
+		"prefsHoldCurrentStateDx11Shader",
+		"prefsSetOptVarToDefaultDx11Shader",
+		(getPluginResource( "dx11Shader", "kPrefDx11ShaderPanel")),
+		(getPluginResource( "dx11Shader", "kPrefDx11ShaderTab")));
+}
+
+global proc dx11ShaderDeleteUI()
+{
+	closePreferencesWindow();
+	deleteCustomPrefsTab("prefsCreateDx11Shader");
+}

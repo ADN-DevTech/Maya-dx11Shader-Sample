@@ -1,0 +1,57 @@
+// requires maya "2013ff06";
+startAttrPreset( "dx11Shader" );
+// This procedural preset provides a way to get back to the default values from the effect file:
+if (`attributeExists "uniformParameters" $gAEAttrPresetCurrentTarget`)
+{
+	// Get all the uniform parameters:
+	string $dx11ShaderPresetUniformAttributes[] = `getAttr ($gAEAttrPresetCurrentTarget + ".uniformParameters")`;
+	
+	// We want to preset all leaf attributes, so we need to convert float2, float3, float4 and compound into leaf attributes:
+	while (size($dx11ShaderPresetUniformAttributes))
+	{
+		// Pop the first attribute:
+		string $dx11ShaderPresetCurrentAttr = $dx11ShaderPresetUniformAttributes[0];
+		stringArrayRemoveAtIndex(0, $dx11ShaderPresetUniformAttributes);
+		
+		// Skip attributes not exposed in the UI:
+		if( `attributeQuery -n $gAEAttrPresetCurrentTarget -h $dx11ShaderPresetCurrentAttr` ==  1)
+			continue;
+		
+		// Skip unsupported types 
+		if (`attributeExists ($dx11ShaderPresetCurrentAttr + "_Type") $gAEAttrPresetCurrentTarget`)
+		{
+			string $dx11ShaderPresetAttrType = `getAttr ($gAEAttrPresetCurrentTarget + "." + $dx11ShaderPresetCurrentAttr + "_Type")`; 
+			switch ( $dx11ShaderPresetAttrType )
+			{
+				case "bool":
+				case "int":
+				case "enum":
+				case "float":
+				case "float2x1":
+				case "float1x2":
+				case "float3x1":
+				case "float1x3":
+				case "float4x1":
+				case "float1x4":
+				case "color3x1":
+				case "color1x3":
+				case "color4x1":
+				case "color1x4":
+					break; // Supported
+				default:        
+					continue; // Unsupported
+			}
+		}
+		
+		string $dx11ShaderPresetChildren[] = `attributeQuery  -node $gAEAttrPresetCurrentTarget -listChildren $dx11ShaderPresetCurrentAttr`;
+		if (size($dx11ShaderPresetChildren)) {
+			// Add the children to the list of attributes to process:
+			$dx11ShaderPresetUniformAttributes = stringArrayCatenate($dx11ShaderPresetChildren, $dx11ShaderPresetUniformAttributes);
+		} else {
+			// This one is a leaf attribute, request a preset blend:
+			float $dx11ShaderPresetDefaultVal[] = `attributeQuery  -node $gAEAttrPresetCurrentTarget -listDefault $dx11ShaderPresetCurrentAttr`;
+			blendAttr $dx11ShaderPresetCurrentAttr $dx11ShaderPresetDefaultVal[0];
+		}
+	}
+}
+endAttrPreset();

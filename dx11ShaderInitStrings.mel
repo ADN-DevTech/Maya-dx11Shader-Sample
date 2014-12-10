@@ -1,0 +1,17 @@
+// PLUGIN NAME: dx11Shader
+
+// FILE: dx11ShaderInitStrings.mel
+
+// DESCRIPTION: Register script resources for the "dx11Shader" plugin
+
+
+global proc dx11ShaderInitStrings()
+{
+	loadPluginLanguageResources("dx11Shader", "dx11Shader.pres.mel");
+
+	// The code that tries to generate nice UI names from CamelCase object names has problems with the number 11,
+	// Let's help by providing a nice UI name,
+	string $niceName = getPluginResource( "dx11Shader", "kNiceNodeName" );
+	displayString -replace -value $niceName "n_dx11Shader.niceName";
+	
+}
